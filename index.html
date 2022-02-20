@@ -1,0 +1,346 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head><!DOCTYPE html>
+
+<head>
+    <title>Project</title>
+    <style>
+        body {
+            background-color: rgb(236, 152, 42);
+			  
+        }
+
+        .center {
+            color: white;
+            font-family: "Trebuchet MS", Helvetica, sans-serif;
+            text-align: center;
+        }
+		.card {
+			border: 2px white solid;
+			padding-bottom: 4px;
+			padding-top: 4px;
+			justify-content: "space-between";
+			align-items: 'center';
+		}
+		.transfer_card {
+			border: 2px white solid;
+			padding-bottom: 4px;
+			margin-bottom: 30px;
+			padding-top: 4px;
+			justify-content: "space-between";
+			align-items: 'center';
+		}
+        h1 {
+            font-size: 144px;
+        }
+
+        p {
+            font-size: 64px;
+        }
+		h2 {
+		  
+		  width: 500px;
+		  padding: 25px;
+		}
+		.dirrow {
+		  display: flex;
+		  flex-direction: row;
+		  align-items: center;
+		  justify-content: center;
+		  background-color: rgb(255, 128, 0);
+		}
+    </style>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+	<script>
+		function openForm() { // removes everything but registeration buttons
+		  document.getElementById("registerForm").style.display = "block";
+		  document.getElementById("loginstuff").style.display = "none";
+		  document.getElementById("transactionstuff").style.display = "none";
+		  document.getElementById("registerstuff").style.display = "none";
+		}
+
+		function closeForm() { // removes registration buttons and adds everything back
+		  document.getElementById("registerForm").style.display = "none";
+		  document.getElementById("loginstuff").style.display = "block";
+		  document.getElementById("transactionstuff").style.display = "block";
+		  document.getElementById("registerstuff").style.display = "block";
+		} 
+		function viewShow() { //
+		  document.getElementById("viewTable").style.display = "block";
+		  document.getElementById("dirrow").style.display = "none";
+		  $.post("http://localhost:3000/viewAll",{userid: null}, function(data){ // post server for all the accounts of the user
+			let table = document.getElementById("viewTable");
+			table.innerHTML = ''; 
+			for (var i = 0; i < data.length; i++) {
+				let card = document.createElement("div")
+				let user = document.createElement('p1')	
+				let accountName = document.createElement('p1')
+				let balance = document.createElement('p1')	
+				accountName.innerHTML = "Account Number: "+data[i].a_id
+				balance.innerHTML = "  Balance: "+data[i].account_balance				
+				user.innerHTML = "  User ID: "+data[i].c_id			
+				card.classList.add('card')
+				card.appendChild(accountName)
+				card.appendChild(balance)
+				card.appendChild(user)
+				table.appendChild(card)				
+			}
+		  });
+		} 
+		
+		function viewClose() { //
+		  document.getElementById("viewTable").style.display = "none";
+		  document.getElementById("dirrow").style.display = "flex";
+		} 
+		function updateAccounts() { // it gets the accounts and then populates a table in the html with components
+			userid=document.getElementById("bankUser").innerHTML;
+			$.post("http://localhost:3000/getAccounts",{userid: userid}, function(data){ // post server for all the accounts of the user
+            //document.getElementById("bankBalance").innerHTML = data;
+			let table = document.getElementById("table");
+			table.innerHTML = ''; 
+			for (var i = 0; i < data.length; i++) {
+				 
+				let card = document.createElement("div")
+				let accountName = document.createElement('p1')
+				let balance = document.createElement('p1')
+				
+				accountName.innerHTML = "Account Number: "+data[i].a_id
+				balance.innerHTML = "  Balance: "+data[i].account_balance
+				card.classList.add('card')
+				card.appendChild(accountName)
+				card.appendChild(balance)
+				table.appendChild(card)
+				let input = document.createElement('input')
+				input.type = "Text";
+				input.size = 40;
+				input.value = "0";
+				input.id = data[i].a_id
+				let input1 = document.createElement('input')
+				input1.type = "Button";
+				input1.size = 40;
+				input1.value = "Withdraw";
+				input1.id = data[i].a_id
+				let input2 = document.createElement('input')
+				input2.type = "Button";
+				input2.size = 40;
+				input2.value = "Deposit";
+				input2.id = data[i].a_id
+				card.appendChild(input)
+				card.appendChild(input1)
+				card.appendChild(input2)
+				input2.addEventListener("click", function() { // add event listeners to each withdraw/ deposit button so they can communicate with server
+					// this is when they click deposit
+					let act_num = input2.id
+					let amount = input2.parentNode.childNodes[2].value
+					$.post("http://localhost:3000/deposit",{amount: amount, act_num: act_num}, function(data){ // this is when we send the POST request to the server
+						updatePage()
+					});
+				});
+				input1.addEventListener("click", function() {
+					// this is when they click withdraw
+					let act_num = input1.id
+					let amount = input1.parentNode.childNodes[2].value
+					$.post("http://localhost:3000/withdraw",{amount: amount, act_num: act_num}, function(data){ // this is when we send the POST request to the server
+						if (data.includes('check failed')) {
+							document.getElementById("mainerror").innerHTML = "Account: "+act_num+ " does not have enough money to withdraw";
+						} else {
+							updatePage()
+						}
+					});
+				});
+			}
+          });
+		}
+		function updateTransactions() { // gets all the transactions of a user and populates html with it
+			userid=document.getElementById("bankUser").innerHTML;
+			$.post("http://localhost:3000/getTransactions",{userid: userid}, function(data){ // post request for transactions
+			let table = document.getElementById("table1");
+			table.innerHTML = ''; 
+			for (var i = 0; i < data.length; i++) {
+				 
+				let card = document.createElement("div")
+				let accountName = document.createElement('p1')
+				let Date = document.createElement('p1')
+				let Amount = document.createElement('p1')
+				let Desc = document.createElement('p1')
+				
+				accountName.innerHTML = "Account Number: "+data[i].a_id
+				Date.innerHTML = " Date: "+data[i].transaction_date
+				Amount.innerHTML = " Amount: "+data[i].transaction_amount
+				Desc.innerHTML = " Description: "+data[i].transaction_description
+				card.classList.add('card')
+				card.appendChild(accountName)
+				card.appendChild(Date)
+				card.appendChild(Amount)
+				card.appendChild(Desc)
+				table.appendChild(card)
+			}
+          });
+		 }
+		function updateBalance() {
+			userid=document.getElementById("bankUser").innerHTML; // we take the input from the text button
+			$.post("http://localhost:3000/totalBalance",{userid: userid}, function(data){ // this is when we send the POST request to the server
+				document.getElementById("totalBalance").innerHTML = "Total Balance: "+data.bal;
+			});
+		}
+		function updatePage() {
+			document.getElementById("mainerror").innerHTML = ""
+			updateAccounts()
+			updateTransactions()
+			updateBalance()
+		}
+	</script>
+    <script>
+      $(document).ready(function(){ // handles creating new accounts for a user
+	  var userid;
+        $("#newAccount").click(function(){
+			userid=document.getElementById("bankUser").innerHTML;
+			$.post("http://localhost:3000/addaccount",{userid: userid}, function(data){ // this is when we send the POST request to the server
+				updatePage()
+			});
+		});
+	   });
+    </script>
+    <script>
+      $(document).ready(function(){ // this opens register form
+        $("#openRegisterForm").click(function(){
+			openForm()
+        });
+      });
+    </script>
+    <script>
+      $(document).ready(function(){
+		var userid;
+        $("#registerCustomer").click(function(){ // this handles registering users
+			userid=$("#registerUsername").val();
+			dob=$("#registerDate").val();
+			phone=$("#registerPhone").val();
+			$.post("http://localhost:3000/adduser",{userid: userid, dob: dob, phone: phone}, function(data){ // this is when we send the POST request to the server
+				if (data.includes('constraint')) { // if user already exists
+					return document.getElementById("error").innerHTML = "User already exists";
+				}
+				if (data.includes('datatype')) {
+					return document.getElementById("error").innerHTML = "Name must be User followed by numbers, example : User12";
+				}
+				document.getElementById("bankUser").innerHTML = userid;
+				updatePage()
+				closeForm()				
+
+			});
+        });
+      });
+    </script>
+    <script>
+      $(document).ready(function(){ // this handles transfer events
+		var userid;
+        $("#transferSubmit").click(function(){
+			userid=document.getElementById("bankUser").innerHTML;
+			act1=$("#transferACT1").val();
+			act2=$("#transferACT2").val();
+			amount=$("#transferAmount").val();
+			$.post("http://localhost:3000/transfer",{userid: userid, act1: act1, act2: act2, amount: amount}, function(data){ // this is when we send the POST request to the server
+				if (data.includes('check failed')) {
+					document.getElementById("mainerror").innerHTML = "Account: "+act1+ " does not exist or does not have enough to do the transfer";
+				} else {
+					document.getElementById("mainerror").innerHTML = ""
+					updatePage()
+				}
+			});
+        });
+      });
+    </script>
+    <script>
+      $(document).ready(function(){
+        var userid;
+        $("#loginSubmit").click(function(){ // changes the userid of the html
+		  userid=$("#loginText").val();
+		  document.getElementById("bankUser").innerHTML = userid;
+		  updatePage()
+        });
+      });
+    </script>
+    <script>
+      $(document).ready(function(){
+        var userid;
+        $("#viewShow").click(function(){ // manages the view button
+		  viewShow()
+        });
+      });
+    </script>
+    <script>
+      $(document).ready(function(){
+        var userid;
+        $("#viewClose").click(function(){ // manages the view button
+		  viewClose()
+		  closeForm()
+        });
+      });
+    </script>
+    <script>
+      $(document).ready(function(){ // closes the registeration page and updates the html on first load 
+		document.getElementById("registerForm").style.display = "none";
+		updatePage()
+      });
+    </script>
+</head>
+	
+<body>
+    <div class="center">
+	<div class="form-popup" id="myForm">
+	</div>
+        <h1>Citizens United Bank!</h1>
+        <p>Welcome!</p>
+		<p id=bankUser>User1</p>
+		<p id='mainerror'></p>
+		<div id='dirrow' class="dirrow">
+			<h2 id='registerstuff'>
+				<div class ='transfer_card'>
+					<input type="TEXT" id="transferACT1" size = '10' value="AccountID1">
+					<input type="TEXT" id="transferACT2" size = '10'value="AccountID2">
+					<input type="TEXT" id="transferAmount" size = '10'value="Amount">
+					<input type="Button" id="transferSubmit" value="Transfer Money">
+				</div>
+				
+				<input type="button" id="newAccount" value="Create New Account">
+
+				<ul id ="table">
+
+					
+				</ul>
+			</h2>
+			<h2 id='loginstuff'>
+				<p id='totalBalance'>Total Balance: </p>
+			
+				<p2> Login to different accout: </p2>
+				<input type="TEXT" id="loginText" size="40" value="User1"><br>
+				<input type="button" id="loginSubmit" value="Login">
+				<input type="button" id="openRegisterForm" value="Register New User">
+			</h2>
+			<h2 id='transactionstuff'>
+				<p> Transactions </p>
+				<ul id ="table1">
+
+					
+				</ul>
+			</h2>
+			<h2 class= 'register' id='registerForm'>
+				<ul>
+					<p id='error'></p>
+					<input type="TEXT" id="registerUsername" size="40" value="User1"><br>
+					<input type="date" id="registerDate" size="40" value="2018-07-22"><br>
+					<input type="tel" id="registerPhone" size="40" value="999-9999-9999"><br>
+					<input type="button" id="registerCustomer" value="Register">
+				</ul>
+			</h2>
+		</div>
+		<ul id ="viewTable">
+
+			
+		</ul>
+		<input type="button" id="viewClose" value="go back">
+		<input type="button" id="viewShow" value="show all accounts">
+    </div>
+</body>
+
+</html>
